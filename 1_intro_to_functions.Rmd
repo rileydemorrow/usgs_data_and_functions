@@ -3,6 +3,8 @@ title: "Working with USGS Data and Functions"
 author: "Matthew Ross"
 date: "10/7/2019"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -11,6 +13,7 @@ library(dataRetrieval)
 library(dygraphs) #Time series plotting
 library(tidyr) 
 library(xts) #Time series objects
+library(ggthemes)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -109,6 +112,7 @@ wide_xts <- xts(wide_data %>%
                 order.by = wide_data$Date)
 
 dygraph(wide_xts)
+
 ```
 
 
@@ -154,6 +158,15 @@ plot). Please plot the `combo_data` dataset here.
 
 ```{r}
 
+plot <- function(df){
+  timeseries <- ggplot(df, aes(x = Date, y = q_cfs, color = site))+
+    geom_line()+
+    theme_few()
+  return(timeseries)
+}
+
+plot(combo_data)
+
 ```
 
 
@@ -165,8 +178,12 @@ Even if your function call works, why is my function "brittle?"
 
 Hint: hardcoding `q_cfs = X_00060_00003` could be dangerous
 
+## Weber River near Plain City, UT and Spanish Fork at Castilla, UT
 ```{r}
-
+weber_q <- q_downloader(site_no = '10141000',
+                          site_id = 'weber')
+spfork_q <- q_downloader(site_no = '10150500',
+                         site_id = 'spfork')
 ```
 
 
@@ -181,6 +198,19 @@ Hint: be careful of having two `site` columns.
 
 ```{r}
 
+joiner <- function(df1,df2,qname1,qname2){
+  df <- inner_join(df1 %>% 
+                     select(Date, q_cfs),
+                   df2 %>% 
+                     select(Date,q_cfs),by="Date") %>%
+    rename(!!qname1 := 2, #Crazy rlang::tidyeval stuff I didn't want to get into
+           !!qname2 := 3) %>% #Same
+    as_tibble()
+  return(df)
+}
+
+joined_df <- joiner(weber_q,spfork_q,'weber_q','spfork_q')
+
 ```
 
 
@@ -191,6 +221,16 @@ a dygraph. Here, I want you to make a similar function that preps *and* plots a 
 
 
 ```{r}
+xts_maker_utah <- function(df){
+  
+    utah_xts <- xts(df %>%
+                  select(-Date),
+                order.by = df$Date)
+  return(dygraph(utah_xts))
+}
+
+xts_maker_utah(joined_df)
+
 
 ```
 
