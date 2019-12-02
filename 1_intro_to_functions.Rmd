@@ -161,7 +161,11 @@ plot). Please plot the `combo_data` dataset here.
 plot <- function(df){
   timeseries <- ggplot(df, aes(x = Date, y = q_cfs, color = site))+
     geom_line()+
-    theme_few()
+    theme_few()+
+    ylab("Streamflow (cfs)")+
+    xlab("Year")+
+    theme(legend.position = c(0.4, 0.87))
+  
   return(timeseries)
 }
 
